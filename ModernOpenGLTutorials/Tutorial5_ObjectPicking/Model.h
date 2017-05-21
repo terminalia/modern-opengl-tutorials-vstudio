@@ -37,8 +37,12 @@ public:
 	void translate(const glm::vec3 &new_position);
 	void rotate(GLfloat angle_deg, const glm::vec3 &axis);
 	void scale(const glm::vec3 &scaling);
+	void showBB(bool visible);
+	void draw();
+	void drawBB();
 
 	std::string getName();
+	bool isBBVisible();
 	glm::mat4 &getModelMatrix();
 	glm::mat4 &getNormalMatrix();
 	glm::vec3 getPosition();

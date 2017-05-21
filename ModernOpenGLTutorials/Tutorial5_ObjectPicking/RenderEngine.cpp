@@ -62,9 +62,9 @@ void RenderEngine::initGL()
 	fboScreenQuad = new ScreenQuad();
 
 	try {
-		basicShader = new ShaderProgram("Basic", "../Shaders/Tutorial4/basic.vert", "../Shaders/Tutorial4/basic.frag");
-		uiShader = new ShaderProgram("uiShader", "../Shaders/Tutorial4/ui.vert", "../Shaders/Tutorial4/ui.frag");
-		fboShader = new ShaderProgram("fboShader", "../Shaders/Tutorial4/fboscreen.vert", "../Shaders/Tutorial4/fboscreen.frag");
+		basicShader = new ShaderProgram("Basic", "../Shaders/Tutorial5/basic.vert", "../Shaders/Tutorial5/basic.frag");
+		uiShader = new ShaderProgram("uiShader", "../Shaders/Tutorial5/ui.vert", "../Shaders/Tutorial5/ui.frag");
+		fboShader = new ShaderProgram("fboShader", "../Shaders/Tutorial5/fboscreen.vert", "../Shaders/Tutorial5/fboscreen.frag");
 
 		objLoader.loadFile("../Assets/pig.obj");
 		mesh = new Mesh("PigMesh", objLoader.getPositions(), objLoader.getNormals(), objLoader.getTexCoords(), objLoader.getIndices());
@@ -78,7 +78,7 @@ void RenderEngine::initGL()
 
 	//FrameBuffer texture size is usally the same size of the screen (or window) but it's not mandatory!
 	//In this example we want to use a 1024x1024 texture size
-	initFrameBuffer(1024, 1024);
+	initFrameBuffer(1280, 1280);
 }
 
 void RenderEngine::resize(int width, int height)
@@ -89,7 +89,7 @@ void RenderEngine::resize(int width, int height)
 	float ratio = (float)window_width / (float)window_height;
 	camera.updateViewRatio(ratio);	
 
-	initFrameBuffer(1024, 1024);
+	//initFrameBuffer(1280, 1280);
 }
 
 void RenderEngine::render()
@@ -100,25 +100,35 @@ void RenderEngine::render()
 	glClearColor(0.0f, 0.3f, 0.5f, 1.0f);
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-	glUseProgram(basicShader->getProgram());
+	//Because the texture size is different from the screen size (or window), 
+	//Set the viewport accordingly to the texture size
+	glViewport(0, 0, 1280, 1280);
 	
 	basicShader->bind();
 	basicShader->uploadMat4("uProjectionMat", camera.getProjectionMatrix());
 	basicShader->uploadMat4("uViewMat", camera.getViewMatrix());
-	basicShader->uploadMat4("uModelMat", models[0]->getModelMatrix());
 
-	//Because the texture size is different from the screen size (or window), 
-	//Set the viewport accordingly to the texture size
-	glViewport(0, 0, 1024, 1024);
-	texture->bind(GL_TEXTURE0);
-	mesh->draw();
+	for (unsigned int i = 0; i < models.size(); i++)
+	{
+		basicShader->uploadMat4("uModelMat", models[0]->getModelMatrix());
+		models.at(i)->draw();
+	}
 
 	uiShader->bind();
 	uiShader->uploadMat4("uProjectionMat", camera.getProjectionMatrix());
 	uiShader->uploadMat4("uViewMat", camera.getViewMatrix());
 	uiShader->uploadMat4("uModelMat", glm::mat4(1.0f));
 	uiGrid.draw();
+
+	//DRAW BOUNDING BOXES
+	for (unsigned int i = 0; i < models.size(); i++)
+	{
+		uiShader->uploadMat4("uModelMat", models.at(i)->getModelMatrix());
+		if (models.at(i)->isBBVisible())
+		{
+			models.at(i)->drawBB();
+		}
+	}
 
 	//BACK TO DEFAULT BUFFER, RENDER TO SCREEN
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -163,7 +173,98 @@ void RenderEngine::initFrameBuffer(int texture_width, int texture_height)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void RenderEngine::castRay(int mouse_x, int mouse_y, int screen_width, int screen_height)
+{
+	pickedObjectID = "";
+	glm::vec3 startRay = camera.getPosition();
+	glm::vec3 rayDir = unproject(mouse_x, mouse_y, screen_width, screen_height, camera.getViewMatrix(), camera.getProjectionMatrix());
+
+	float distance = 0.0f;
+	float minDistance = 1000000.0f;
+
+	for (unsigned int i = 0; i < models.size(); i++)
+	{
+		models.at(i)->showBB(false);
+		if (rayInBoundingBox(startRay, rayDir, models.at(i)->getMesh(), models.at(i)->getModelMatrix(), distance))
+		{
+			minDistance = distance;
+			pickedObjectID = models.at(i)->getName();
+		}
+	}
+
+	if (!pickedObjectID.empty())
+	{
+		Model *model = findElement(pickedObjectID, models);
+		if (model) {
+			model->showBB(true);
+		}
+	}
+}
+
+void RenderEngine::findObjectInScreen(int mouse_x, int mouse_y, int screen_width, int screen_height)
+{
+	if (!pickedObjectID.empty())
+	{
+		Model *model = findElement(pickedObjectID, models);
+		if (model)
+		{
+			glm::mat4 view = camera.getViewMatrix();
+			glm::mat4 proj = camera.getProjectionMatrix();
+			glm::vec4 viewport = glm::vec4(0, 0, screen_width, screen_height);
+			glm::mat4 modelMat = glm::mat4(1.0f);
+
+			//Find the object position in world space
+			glm::vec3 objectWorldPos = model->getPosition();
+
+			//Compute object position in screen space
+			//We don't use the model matrix of the object because the position of the object is already in world space (multiplied by its model matrix)
+			objectScreenPoint = glm::project(objectWorldPos, view * modelMat, proj, viewport);
+
+			//Compute mouse position in world space
+			//We use the identity model matrix
+			glm::vec3 mouseWorldPos = glm::unProject(glm::vec3(mouse_x, 1 - mouse_y, objectScreenPoint.z), view * glm::mat4(1.0f), proj, viewport);
+			//Compute the offset between the object position and where the user has clicked (when collision is detected)
+			objectMouseOffset = objectWorldPos - mouseWorldPos;
+		}
+	}
+}
+
+void RenderEngine::moveObject(int mouse_x, int mouse_y, int screen_width, int screen_height)
+{
+	if (!pickedObjectID.empty())
+	{
+		Model *model = findElement(pickedObjectID, models);
+		if (model)
+		{
+			glm::mat4 modelMat = glm::mat4(1.0f);
+			glm::mat4 view = camera.getViewMatrix();
+			glm::mat4 proj = camera.getProjectionMatrix();
+			glm::vec4 viewport = glm::vec4(0, 0, screen_width, screen_height);
+
+			//When dragging the mouse, compute mouse position in world space
+			glm::vec3 curMouseWorldPos = glm::unProject(glm::vec3(mouse_x, 1 - mouse_y, objectScreenPoint.z), view * modelMat, proj, viewport);
+			//When moving the mouse, the offset between the object position and the mouse position is always the same
+			//so we have to take it in account when computing the new position of the object
+			glm::vec3 newEntityWorldPos = curMouseWorldPos + objectMouseOffset;
+
+			model->translate(newEntityWorldPos);
+		}
+	}
+}
+
 OrbitCamera &RenderEngine::getCamera()
 {
 	return camera;
+}
+
+template<typename T>
+inline T RenderEngine::findElement(const std::string & name, const std::vector<T>& vec)
+{
+	for (unsigned int i = 0; i<vec.size(); i++)
+	{
+		if (vec[i]->getName().compare(name) == 0)
+			return vec[i];
+	}
+
+	return NULL;
 }

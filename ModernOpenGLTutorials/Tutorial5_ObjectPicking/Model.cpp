@@ -56,9 +56,30 @@ void Model::scale(const glm::vec3 & scaling)
 	scaleMatrix = glm::scale(glm::mat4(1.0f), scaling);
 }
 
+void Model::showBB(bool visible)
+{
+	mesh->setBBVisible(visible);
+}
+
+void Model::draw()
+{
+	texture->bind(GL_TEXTURE_2D);
+	mesh->draw();
+}
+
+void Model::drawBB()
+{
+	mesh->drawBB();
+}
+
 std::string Model::getName()
 {
 	return name;
+}
+
+bool Model::isBBVisible()
+{
+	return mesh->isBBVisible();
 }
 
 glm::mat4 & Model::getModelMatrix()

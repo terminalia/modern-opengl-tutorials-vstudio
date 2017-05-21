@@ -36,6 +36,7 @@
     <ClInclude Include="BoundingBox.h" />
     <ClInclude Include="Grid.h" />
     <ClInclude Include="Line.h" />
+    <ClInclude Include="MathUtils.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="ObjLoader.h" />

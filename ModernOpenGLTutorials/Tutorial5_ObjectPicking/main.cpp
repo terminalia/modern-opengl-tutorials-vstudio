@@ -21,9 +21,12 @@ double frameCount = 0;
 bool mouseLeftPressed = false;
 bool mouseRightPressed = false;
 bool mouseMiddlePressed = false;
+bool altPressed = false;
 float mouseSensitivity = 0.009f;
 double mousePositionx = 0;
 double mousePositiony = 0;
+int current_width = 0;
+int current_height = 0;
 
 GLFWwindow *window;
 
@@ -38,7 +41,9 @@ void initGL()
 
 void resize(GLFWwindow *window, int width, int height)
 {
-	renderEngine->resize(width, height);
+	current_width = width;
+	current_height = height;
+	renderEngine->resize(current_width, current_height);
 }
 
 void render()
@@ -48,17 +53,22 @@ void render()
 
 void keyboardInput(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-	if (action != GLFW_PRESS)
-		return;
-
-	switch (key)
+	if (action == GLFW_PRESS)
 	{
-	case GLFW_KEY_ESCAPE:
-		glfwSetWindowShouldClose(window, GL_TRUE);
-		break;
+		if (key == GLFW_KEY_ESCAPE)
+		{
+			glfwSetWindowShouldClose(window, GL_TRUE);
+		}
 
-	default:
-		return;
+		if (mods == GLFW_MOD_ALT)
+		{
+			altPressed = true;
+		}
+	}
+
+	if (action == GLFW_RELEASE)
+	{
+		altPressed = false;
 	}
 }
 
@@ -66,9 +76,15 @@ void mousePressed(GLFWwindow *window, int button, int action, int mod)
 {
 	if (action == GLFW_PRESS)
 	{
+		glfwGetCursorPos(window, &mousePositionx, &mousePositiony);
+
 		if (button == GLFW_MOUSE_BUTTON_1)
 		{
-			glfwGetCursorPos(window, &mousePositionx, &mousePositiony);
+			if (!altPressed)
+			{
+				renderEngine->castRay(mousePositionx, mousePositiony, current_width, current_height);
+				renderEngine->findObjectInScreen(mousePositionx, mousePositiony, current_width, current_height);
+			}
 			mouseLeftPressed = true;
 		}
 		else if (button == GLFW_MOUSE_BUTTON_3)
@@ -97,9 +113,16 @@ void mouseMoved(GLFWwindow *window, double x, double y)
 
 	if (mouseLeftPressed)
 	{
-		x_offset *= mouseSensitivity;
-		y_offset *= mouseSensitivity;
-		renderEngine->getCamera().rotate(x_offset, y_offset);
+		if (altPressed)
+		{
+			x_offset *= mouseSensitivity;
+			y_offset *= mouseSensitivity;
+			renderEngine->getCamera().rotate(x_offset, y_offset);
+		}
+		else
+		{
+			renderEngine->moveObject(mousePositionx, mousePositiony, current_width, current_height);
+		}
 	}
 	else if (mouseMiddlePressed)
 	{
@@ -191,9 +214,6 @@ bool initGLFW()
 		return false;
 	}
 
-	
-
-	int current_width, current_height;
 	glfwGetFramebufferSize(window, &current_width, &current_height);
 
 	renderEngine = new RenderEngine(current_width, current_height);

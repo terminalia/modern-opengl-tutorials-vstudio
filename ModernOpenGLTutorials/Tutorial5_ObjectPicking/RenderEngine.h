@@ -18,6 +18,7 @@
 #include "Grid.h"
 #include "ScreenQuad.h"
 #include "Model.h"
+#include "MathUtils.h"
 
 class RenderEngine
 {
@@ -39,6 +40,10 @@ private:
 	GLuint colorFBOTextureId;
 	GLuint depthFBOTextureId;
 
+	glm::vec3 objectScreenPoint;
+	glm::vec3 objectMouseOffset;
+	std::string pickedObjectID;
+
 	int window_width;
 	int window_height;
 
@@ -51,8 +56,14 @@ public:
 	void render();
 
 	void initFrameBuffer(int texture_width, int texture_height);
+	void castRay(int mouse_x, int mouse_y, int screen_width, int screen_height);
+	void findObjectInScreen(int mouse_x, int mouse_y, int screen_width, int screen_height);
+	void moveObject(int mouse_x, int mouse_y, int screen_width, int screen_height);
 
 	OrbitCamera &getCamera();
+
+	template<typename T>
+	T findElement(const std::string &name, const std::vector<T> &vec);
 };
 
 #endif
