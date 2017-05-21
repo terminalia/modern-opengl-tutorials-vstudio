@@ -1,0 +1,8 @@
+*.opendb
+*.exe
+*.pdb
+*.ilk
+*.log
+*.db
+ModernOpenGLTutorials/ModernOpenGLTutorials.VC.db
+Debug/
