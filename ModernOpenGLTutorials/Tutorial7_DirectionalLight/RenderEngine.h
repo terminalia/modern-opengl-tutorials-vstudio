@@ -24,7 +24,7 @@
 class RenderEngine
 {
 private:
-	ShaderProgram *pointLightShader;
+	ShaderProgram *dirLightShader;
 	ShaderProgram *uiShader;
 	ShaderProgram *fboShader;
 	Mesh *pigMesh;

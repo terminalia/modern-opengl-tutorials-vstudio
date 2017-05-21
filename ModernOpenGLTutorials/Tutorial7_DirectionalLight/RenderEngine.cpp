@@ -38,9 +38,9 @@ RenderEngine::~RenderEngine()
 		delete groundTexture;
 	}
 
-	if (pointLightShader) {
-		pointLightShader->cleanUp();
-		delete pointLightShader;
+	if (dirLightShader) {
+		dirLightShader->cleanUp();
+		delete dirLightShader;
 	}
 
 	if (uiShader) {
@@ -78,7 +78,7 @@ void RenderEngine::initGL()
 
 	try {
 		//SHADERS
-		pointLightShader = new ShaderProgram("PointLightShader", "../Shaders/Tutorial7/directional_light.vert", "../Shaders/Tutorial7/directional_light.frag");
+		dirLightShader = new ShaderProgram("PointLightShader", "../Shaders/Tutorial7/directional_light.vert", "../Shaders/Tutorial7/directional_light.frag");
 		uiShader = new ShaderProgram("uiShader", "../Shaders/Tutorial7/ui.vert", "../Shaders/Tutorial7/ui.frag");
 		fboShader = new ShaderProgram("fboShader", "../Shaders/Tutorial7/fboscreen.vert", "../Shaders/Tutorial7/fboscreen.frag");
 
@@ -133,22 +133,22 @@ void RenderEngine::render()
 	//Set the viewport accordingly to the texture size
 	glViewport(0, 0, 1280, 1280);
 	
-	pointLightShader->bind();
-	pointLightShader->uploadMat4("uProjectionMat", camera.getProjectionMatrix());
-	pointLightShader->uploadMat4("uViewMat", camera.getViewMatrix());
-	pointLightShader->uploadVec3("uCameraPosition", camera.getPosition());
+	dirLightShader->bind();
+	dirLightShader->uploadMat4("uProjectionMat", camera.getProjectionMatrix());
+	dirLightShader->uploadMat4("uViewMat", camera.getViewMatrix());
+	dirLightShader->uploadVec3("uCameraPosition", camera.getPosition());
 	
 	//APPLY LIGTHING
 	for (unsigned int i = 0; i < lights.size(); i++)
 	{
-		lights.at(i)->uploadUniformsToShader(pointLightShader);
+		lights.at(i)->uploadUniformsToShader(dirLightShader);
 	}
 
 	//RENDER MODELS
 	for (unsigned int i = 0; i < models.size(); i++)
 	{
-		pointLightShader->uploadMat4("uModelMat", models[i]->getModelMatrix());
-		pointLightShader->uploadMat4("uNormalMat", models[i]->getNormalMatrix());
+		dirLightShader->uploadMat4("uModelMat", models[i]->getModelMatrix());
+		dirLightShader->uploadMat4("uNormalMat", models[i]->getNormalMatrix());
 		models.at(i)->draw();
 	}
 
