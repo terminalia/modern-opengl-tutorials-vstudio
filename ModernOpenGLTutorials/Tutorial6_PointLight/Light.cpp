@@ -6,7 +6,7 @@ Light::Light()
 {
 }
 
-Light::Light(const std::string & name, LightType lightType, const glm::vec3 & ambientColor, const glm::vec3 & diffuseColor, const glm::vec3 & specularColor, Mesh * mesh)
+Light::Light(const std::string & name, LightType lightType, const glm::vec3 &position, glm::vec3 & ambientColor, const glm::vec3 & diffuseColor, const glm::vec3 & specularColor, Mesh * mesh)
 {
 	this->name = name;
 	this->lightType = lightType;
@@ -25,6 +25,8 @@ Light::Light(const std::string & name, LightType lightType, const glm::vec3 & am
 	attenuation_linear = 0.022f;
 	attenuation_quadratic = 0.0019f;
 	specularStrength = 64;
+
+	translate(position);
 }
 
 Light::Light(const Light &light)
