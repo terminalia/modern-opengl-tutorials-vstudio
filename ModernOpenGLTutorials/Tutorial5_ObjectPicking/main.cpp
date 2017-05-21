@@ -32,7 +32,7 @@ GLFWwindow *window;
 
 RenderEngine *renderEngine;
 
-std::string title = "Tutorial4 - FBO";
+std::string title = "Tutorial5 - Object Picking";
 
 void initGL()
 {
