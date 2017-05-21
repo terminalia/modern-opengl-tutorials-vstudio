@@ -99,7 +99,7 @@ void RenderEngine::initGL()
 		models.push_back(new Model("Ground", groundMesh, groundTexture));
 
 		//LIGHTS
-		lights.push_back(new Light("PointLight", point, glm::vec3(0, 5, 0), glm::vec3(0.1, 0.1, 0.1), glm::vec3(1, 1, 1), glm::vec3(1, 1, 1), lightMesh));
+		lights.push_back(new Light("PointLight", point, glm::vec3(0, 5, 0), glm::vec3(0.1, 0.1, 0.1), glm::vec3(1, 1, 1), glm::vec3(1, 1, 1), 1.0f, 0.022f, 0.0019f, lightMesh));
 	}
 	catch (std::exception &ex) {
 		std::cerr << ex.what() << std::endl;

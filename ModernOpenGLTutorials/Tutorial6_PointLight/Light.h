@@ -45,7 +45,7 @@ private:
 
 public:
 	Light();
-	Light(const std::string &name, LightType lightType, const glm::vec3 &position, glm::vec3 &ambientColor, const glm::vec3 &diffuseColor, const glm::vec3 &specularColor, Mesh *mesh);
+	Light(const std::string &name, LightType lightType, const glm::vec3 &position, glm::vec3 &ambientColor, const glm::vec3 &diffuseColor, const glm::vec3 &specularColor, float constant, float linear, float quadratic, Mesh *mesh);
 	Light(const Light &light);
 	~Light();
 

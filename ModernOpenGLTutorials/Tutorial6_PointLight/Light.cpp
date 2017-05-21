@@ -6,7 +6,7 @@ Light::Light()
 {
 }
 
-Light::Light(const std::string & name, LightType lightType, const glm::vec3 &position, glm::vec3 & ambientColor, const glm::vec3 & diffuseColor, const glm::vec3 & specularColor, Mesh * mesh)
+Light::Light(const std::string & name, LightType lightType, const glm::vec3 &position, glm::vec3 & ambientColor, const glm::vec3 & diffuseColor, const glm::vec3 & specularColor, float constant, float linear, float quadratic, Mesh * mesh)
 {
 	this->name = name;
 	this->lightType = lightType;
@@ -21,9 +21,9 @@ Light::Light(const std::string & name, LightType lightType, const glm::vec3 &pos
 	translateMatrix = glm::mat4(1.0f);
 	rotateMatrix = glm::mat4(1.0f);
 
-	attenuation_constant = 1.0f;
-	attenuation_linear = 0.022f;
-	attenuation_quadratic = 0.0019f;
+	attenuation_constant = constant;
+	attenuation_linear = linear;
+	attenuation_quadratic = quadratic;
 	specularStrength = 64;
 
 	translate(position);
