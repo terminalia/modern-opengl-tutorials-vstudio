@@ -243,8 +243,10 @@ void RenderEngine::castRay(int mouse_x, int mouse_y, int screen_width, int scree
 		models.at(i)->showBB(false);
 		if (rayInBoundingBox(startRay, rayDir, models.at(i)->getMesh(), models.at(i)->getModelMatrix(), distance))
 		{
-			minDistance = distance;
-			pickedObjectID = models.at(i)->getName();
+			if (distance < minDistance) {
+				minDistance = distance;
+				pickedObjectID = models.at(i)->getName();
+			}
 		}
 	}
 
