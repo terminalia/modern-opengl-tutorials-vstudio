@@ -145,10 +145,9 @@ void RenderEngine::render()
 
 void RenderEngine::renderColorMap(ShaderProgram * shader, int texture_width, int texture_height)
 {
-	//RENDER TO FRAMEBUFFER TEXTURE
+	//RENDER TO FRAMEBUFFER COLOR TEXTURE
 	glBindFramebuffer(GL_FRAMEBUFFER, colorFBO);
 	glClearColor(0.0f, 0.3f, 0.5f, 1.0f);
-
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//Because the texture size is different from the screen size (or window), 
 	//Set the viewport accordingly to the texture size
@@ -210,10 +209,12 @@ void RenderEngine::renderColorMap(ShaderProgram * shader, int texture_width, int
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-
-	screenColorShader->bind();
 	//Before drawing on the quad screen, set the viewport to the screen size (or window)
 	glViewport(0, 0, window_width, window_height);
+
+	//Bind the screenColorShader to render color map onto screen quad
+	screenColorShader->bind();
+	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, colorFBOColorMap);
 	fboScreenQuad->draw();
@@ -221,6 +222,7 @@ void RenderEngine::renderColorMap(ShaderProgram * shader, int texture_width, int
 
 void RenderEngine::renderDepthMap(ShaderProgram * shader, int texture_width, int texture_height)
 {
+	//RENDER TO FRAMEBUFFER DEPTH TEXTURE
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
 	glClearColor(0.0f, 0.3f, 0.5f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -230,6 +232,7 @@ void RenderEngine::renderDepthMap(ShaderProgram * shader, int texture_width, int
 
 	shader->bind();
 
+	//RENDER THE SCENE FROM LIGHT POINT OF VIEW (compute lightSpaceMatrix)
 	float near = -10.0f;
 	float far = 20.5f;
 	Light *light = findElement("DirLight", lights);
@@ -237,19 +240,23 @@ void RenderEngine::renderDepthMap(ShaderProgram * shader, int texture_width, int
 
 	shader->uploadMat4("uLightSpaceMat", lightSpaceMatrix);
 
+	//RENDER JUST THE MODELS IN THE SCENE
 	for (unsigned int i = 0; i < models.size(); i++)
 	{
 		shader->uploadMat4("uModelMat", models[i]->getModelMatrix());
 		models[i]->draw(GL_TEXTURE0);
 	}
 
+	//BACK TO DEFAULT BUFFER, RENDER TO SCREEN
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//Before drawing on the quad screen, set the viewport to the screen size (or window)
 	glViewport(0, 0, window_width, window_height);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthFBODepthMap);
 
+	//Bind the screenDepthShader to render depth map onto screen quad
 	screenDepthShader->bind();
 	screenDepthShader->uploadInt("depthMap", 0);
 	screenDepthShader->uploadFloat("near_plane", near);
