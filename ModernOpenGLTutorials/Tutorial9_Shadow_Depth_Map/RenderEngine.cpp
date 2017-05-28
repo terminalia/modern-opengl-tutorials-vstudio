@@ -5,6 +5,7 @@ RenderEngine::RenderEngine(int window_width, int window_height)
 	this->window_width = window_width;
 	this->window_height = window_height;
 	isShowingDepthMap = false;
+	isDirLight = true;
 }
 
 RenderEngine::~RenderEngine()
@@ -109,7 +110,7 @@ void RenderEngine::initGL()
 		models.push_back(new Model("Ground", groundMesh, groundTexture));
 
 		//LIGHTS
-		//lights.push_back(new Light("SpotLight", spot, glm::vec3(0, 5, 0), glm::vec3(0, -1, 0), glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(1, 1, 1), glm::vec3(1, 1, 1), 1.0f, 0.022f, 0.0019f, 62.5f, 65.5f, lightMesh));
+		lights.push_back(new Light("SpotLight", spot, glm::vec3(5, 20, 20), glm::vec3(0.0f, -1.0f, -1.0f), glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(1, 1, 1), glm::vec3(1, 1, 1), 1.0f, 0.022f, 0.0019f, 62.5f, 65.5f, lightMesh));
 		lights.push_back(new Light("DirLight", directional, glm::vec3(-1, -5, 0), glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(1, 1, 1), glm::vec3(1, 1, 1), lightMesh));
 	}
 	catch (std::exception &ex) {
@@ -233,14 +234,31 @@ void RenderEngine::renderDepthMap(ShaderProgram * shader, int texture_width, int
 	shader->bind();
 
 	//RENDER THE SCENE FROM LIGHT POINT OF VIEW (compute lightSpaceMatrix)
-	float near = -10.0f;
-	float far = 20.5f;
-	Light *light = findElement("DirLight", lights);
-	glm::mat4 lightSpaceMatrix = computeOrthoLightMatrix(light->getPosition(), glm::vec3(0.0f, 0.0f, 0.0f), -10, 10, -10, 10, near, far);
+	float near = 0.0f;
+	float far = 0.0f;
+	glm::mat4 lightSpaceMatrix;
+
+	//Setup the matrix to render the scene from the point of view of the light (in otho projection)
+	if (isDirLight)
+	{
+		near = -10.0f;
+		far = 20.0f;
+		Light *light = findElement("DirLight", lights);
+		lightSpaceMatrix = computeOrthoLightMatrix(light->getPosition(), glm::vec3(0.0f, 0.0f, 0.0f), -10, 10, -10, 10, near, far);
+	}
+	//Setup the matrix to render the scene from the point of view of the light (in perspective projection)
+	else
+	{
+		float ratio = (float)texture_width / (float)texture_height;
+		near = 0.1f;
+		far = 100.0f;
+		Light *light = findElement("SpotLight", lights);
+		lightSpaceMatrix = computePerspectiveLightMatrix(light->getPosition(), light->getDirection(), 45.0f, ratio, near, far);
+	}
 
 	shader->uploadMat4("uLightSpaceMat", lightSpaceMatrix);
 
-	//RENDER JUST THE MODELS IN THE SCENE
+	//RENDER JUST THE MODELS IN THE SCENE FROM THE LIGHT POINT OF VIEW
 	for (unsigned int i = 0; i < models.size(); i++)
 	{
 		shader->uploadMat4("uModelMat", models[i]->getModelMatrix());
@@ -261,7 +279,7 @@ void RenderEngine::renderDepthMap(ShaderProgram * shader, int texture_width, int
 	screenDepthShader->uploadInt("depthMap", 0);
 	screenDepthShader->uploadFloat("near_plane", near);
 	screenDepthShader->uploadFloat("far_plane", far);
-	screenDepthShader->uploadBool("uIsDirLight", true);
+	screenDepthShader->uploadBool("uIsDirLight", isDirLight);
 	fboScreenQuad->draw();
 }
 
@@ -428,11 +446,26 @@ void RenderEngine::showDepthMap()
 	isShowingDepthMap = !isShowingDepthMap;
 }
 
+void RenderEngine::switchLight()
+{
+	isDirLight = !isDirLight;
+}
+
 glm::mat4 RenderEngine::computeOrthoLightMatrix(const glm::vec3 & lightPos, const glm::vec3 & lightDir, float left, float right, float bottom, float top, float near, float far)
 {
 	glm::mat4 depthProjectionMatrix = glm::ortho(left, right, bottom, top, near, far);
 	glm::mat4 depthViewMatrix = glm::lookAt(lightPos, lightDir, glm::vec3(0, 1, 0));
 	
+	return depthProjectionMatrix * depthViewMatrix;
+}
+
+glm::mat4 RenderEngine::computePerspectiveLightMatrix(glm::vec3 & lightPos, const glm::vec3 & lightDir, float fov, float ratio, float near, float far)
+{
+	//If we use perspective projection we have to invert the lightDir otherwise the depthmap is all white
+	glm::vec3 invLightDir = -lightDir;
+	glm::mat4 depthProjectionMatrix = glm::perspective(glm::radians(fov), ratio, near, far);
+	glm::mat4 depthViewMatrix = glm::lookAt(lightPos, lightPos - invLightDir, glm::vec3(0, 1, 0));
+
 	return depthProjectionMatrix * depthViewMatrix;
 }
 

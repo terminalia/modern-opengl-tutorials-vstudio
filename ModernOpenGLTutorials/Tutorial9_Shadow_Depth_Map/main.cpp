@@ -65,6 +65,11 @@ void keyboardInput(GLFWwindow *window, int key, int scancode, int action, int mo
 			renderEngine->showDepthMap();
 		}
 
+		if (key == GLFW_KEY_W)
+		{
+			renderEngine->switchLight();
+		}
+
 		if (mods == GLFW_MOD_ALT)
 		{
 			altPressed = true;

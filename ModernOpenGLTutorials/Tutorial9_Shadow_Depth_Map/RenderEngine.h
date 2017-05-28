@@ -58,6 +58,7 @@ private:
 	int window_width;
 	int window_height;
 	bool isShowingDepthMap;
+	bool isDirLight;
 
 public:
 	RenderEngine(int window_width, int window_height);
@@ -75,8 +76,9 @@ public:
 	void findObjectInScreen(int mouse_x, int mouse_y, int screen_width, int screen_height);
 	void moveObject(int mouse_x, int mouse_y, int screen_width, int screen_height);
 	void showDepthMap();
+	void switchLight();
 	glm::mat4 computeOrthoLightMatrix(const glm::vec3 &lightPos, const glm::vec3 &lightDir, float left, float right, float bottom, float top, float near, float far);
-
+	glm::mat4 computePerspectiveLightMatrix(glm::vec3 &lightPos, const glm::vec3 &lightDir, float fov, float ratio, float near, float far);
 	OrbitCamera &getCamera();
 
 	template<typename T>

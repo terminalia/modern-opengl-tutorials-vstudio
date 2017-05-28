@@ -9,6 +9,8 @@ uniform float near_plane;
 uniform float far_plane;
 uniform bool uIsDirLight;
 
+float bug = 0.0;
+
 // required when using a perspective projection matrix, otherwise shadowmap is all white
 float LinearizeDepth(float depth)
 {
@@ -22,6 +24,7 @@ void main() {
 	if (uIsDirLight) {
 		// orthographic
 		FragColor = vec4(vec3(depthValue), 1.0); 
+		FragColor.x += bug;
 	}
 	else {
 		// perspective
